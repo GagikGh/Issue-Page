@@ -1,68 +1,112 @@
 import {useState} from "react";
+import * as React from "react";
 
-function NewIssue({issuesList,setIssuesList}) {
-    const [title, setTitle] = useState<string>('');
-    const [description, setDescription] = useState<string>('');
+interface Issue {
+    title: string;
+    description: string;
+    id: number;
+    labels: number[];
+}
 
-    const [isOpen, setIsOpen] = useState<boolean>(false);
+interface IssueProps {
+    issuesList: Issue[],
+    setIssuesList: React.Dispatch<React.SetStateAction<Issue[]>>,
+    labelsList: {
+        id: number;
+        name: string;
+        color: string
+    }[],
+    handleClose: () => void,
+    data?: Issue
+    isEdited: boolean;
+}
 
+function NewIssue({issuesList, setIssuesList, labelsList, handleClose, data, isEdited} : IssueProps ) {
+    const [title, setTitle] = useState<string>(data?.title || '');
+    const [description, setDescription] = useState<string>(data?.description || '');
+    const [selectedLabels, setSelectedLabels] = useState<number[]>(data?.labels || [])
 
-    const handleClick = () => {
-        setIssuesList([...issuesList, {title, description: '', id: issuesList[issuesList.length - 1].id + 1}]);
-    }
-
-    const handleClose = () => setIsOpen(false);
-    const handleOpen = () => setIsOpen(true);
-    const handleAddIssue = (e) => {
+    const handleAddIssue = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         e.preventDefault();
-        if (title.trim() !== '' && description.trim() !== '') {
-            console.log(title,description)
-            setIssuesList([...issuesList, {id: issuesList[issuesList.length - 1].id + 1,  title, description}]);
-            setIsOpen(false);
-        }
+        if (!data) {
+            if (title.trim() !== '' && description.trim() !== '') {
+                setIssuesList([...issuesList, {
+                    id: issuesList[issuesList.length - 1]?.id + 1,
+                    title,
+                    description,
+                    labels: selectedLabels
+                }]);
+                setTitle("");
+                setDescription("");
+                handleClose();
+            }
+        } else {
+            setIssuesList(
+                issuesList.map(issue =>
 
+                    issue.id === data.id
+                        ? {...issue, title, description, labels: selectedLabels}
+                        : issue
+                )
+            );
+
+            handleClose();
+        }
     }
+
+    const handleSelectedLabels = (e:   React.ChangeEvent<HTMLSelectElement>) => {
+        const labelsArray = Array.from(e.target.selectedOptions, option => +option.value);
+        setSelectedLabels(labelsArray);
+    }
+
+    console.log("data", data);
 
     return (
-
-
         <div className="">
-            {isOpen && (
-                <div className="width-100 p-5 border-1 border-gray-800 rounded-md shadow-xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <form className="flex flex-col gap-2">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xl">Title:</label>
-                            <input
-                                placeholder="Enter issue title"
-                                className="px-4 py-3 border-1 border-gray-300  text-xl"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-xl">Description:</label>
-                            <textarea placeholder="Enter issue description"
-                                      className="px-4 py-3 border-1 border-gray-300"
-                                      value={description}
-                                      onChange={(e) => setDescription(e.target.value)}
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <button
-                                className="bg-gray-400 px-4 py-3 text-lg text-white rounded-lg">Cancel</button>
-                            <button className="bg-green-600 px-4 py-3 text-lg text-white rounded-lg" onClick={handleAddIssue}>Create</button>
-                        </div>
-                    </form>
-                </div>
-            )}
+            <div
+                className="width-100 bg-gray-200 p-5 border-1 border-gray-800 rounded-md shadow-xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <form className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xl">Title:</label>
+                        <input
+                            placeholder="Enter issue title"
+                            className="px-4 py-3 border-1 border-gray-300  text-xl"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                        <label className="text-xl">Description:</label>
+                        <textarea placeholder="Enter issue description"
+                                  className="px-4 py-3 border-1 border-gray-300"
+                                  value={description}
+                                  onChange={(e) => setDescription(e.target.value)}
+                        />
+                    </div>
 
+                    <select multiple value={selectedLabels} onChange={(e) => handleSelectedLabels(e)}>
+                        <option disabled>Choose labels</option>
+                        {labelsList.map((label) => (
+                            <option key={label.id} value={label.id}>{label.name}</option>
+                        ))}
+                    </select>
+                    <div className="flex gap-2">
+                        <button
+                            className="bg-gray-400 px-4 py-3 text-lg text-white rounded-lg"
+                            onClick={handleClose}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            className="bg-green-600 px-4 py-3 text-lg text-white rounded-lg"
+                            onClick={handleAddIssue}
+                        >
+                            {isEdited ? "Edit" : "Create"}
+                        </button>
+                    </div>
+                </form>
+            </div>
 
-            <button
-                className="px-4 py-3 text-xl bg-green-600 text-white"
-                onClick={handleOpen}
-            >
-                New Issue
-            </button>
         </div>
     )
 }
