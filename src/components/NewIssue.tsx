@@ -1,4 +1,4 @@
-import {useState} from "react";
+import { useState } from "react";
 import * as React from "react";
 
 interface Issue {
@@ -9,22 +9,18 @@ interface Issue {
 }
 
 interface IssueProps {
-    issuesList: Issue[],
-    setIssuesList: React.Dispatch<React.SetStateAction<Issue[]>>,
-    labelsList: {
-        id: number;
-        name: string;
-        color: string
-    }[],
-    handleClose: () => void,
-    data?: Issue
+    issuesList: Issue[];
+    setIssuesList: React.Dispatch<React.SetStateAction<Issue[]>>;
+    labelsList: { id: number; name: string; color: string }[];
+    handleClose: () => void;
+    data?: Issue;
     isEdited: boolean;
 }
 
-function NewIssue({issuesList, setIssuesList, labelsList, handleClose, data, isEdited} : IssueProps ) {
+function NewIssue({ issuesList, setIssuesList, labelsList, handleClose, data, isEdited }: IssueProps) {
     const [title, setTitle] = useState<string>(data?.title || '');
     const [description, setDescription] = useState<string>(data?.description || '');
-    const [selectedLabels, setSelectedLabels] = useState<number[]>(data?.labels || [])
+    const [selectedLabels, setSelectedLabels] = useState<number[]>(data?.labels || []);
 
     const handleAddIssue = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         e.preventDefault();
@@ -43,62 +39,65 @@ function NewIssue({issuesList, setIssuesList, labelsList, handleClose, data, isE
         } else {
             setIssuesList(
                 issuesList.map(issue =>
-
                     issue.id === data.id
-                        ? {...issue, title, description, labels: selectedLabels}
+                        ? { ...issue, title, description, labels: selectedLabels }
                         : issue
                 )
             );
-
             handleClose();
         }
     }
 
-    const handleSelectedLabels = (e:   React.ChangeEvent<HTMLSelectElement>) => {
+    const handleSelectedLabels = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const labelsArray = Array.from(e.target.selectedOptions, option => +option.value);
         setSelectedLabels(labelsArray);
     }
 
-    console.log("data", data);
-
     return (
-        <div className="">
-            <div
-                className="width-100 bg-gray-200 p-5 border-1 border-gray-800 rounded-md shadow-xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <form className="flex flex-col gap-2">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xl">Title:</label>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white w-full max-w-lg p-6 rounded-xl shadow-lg relative flex flex-col gap-4">
+                <h2 className="text-2xl font-bold">{isEdited ? "Edit Issue" : "New Issue"}</h2>
+                <form className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-lg font-semibold">Title:</label>
                         <input
                             placeholder="Enter issue title"
-                            className="px-4 py-3 border-1 border-gray-300  text-xl"
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                         />
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-xl">Description:</label>
-                        <textarea placeholder="Enter issue description"
-                                  className="px-4 py-3 border-1 border-gray-300"
-                                  value={description}
-                                  onChange={(e) => setDescription(e.target.value)}
+                    <div className="flex flex-col gap-1">
+                        <label className="text-lg font-semibold">Description:</label>
+                        <textarea
+                            placeholder="Enter issue description"
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
                         />
                     </div>
-
-                    <select multiple value={selectedLabels} onChange={(e) => handleSelectedLabels(e)}>
-                        <option disabled>Choose labels</option>
-                        {labelsList.map((label) => (
-                            <option key={label.id} value={label.id}>{label.name}</option>
-                        ))}
-                    </select>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-lg font-semibold">Labels:</label>
+                        <select
+                            multiple
+                            value={selectedLabels}
+                            onChange={handleSelectedLabels}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        >
+                            {labelsList.map((label) => (
+                                <option key={label.id} value={label.id}>{label.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-4">
                         <button
-                            className="bg-gray-400 px-4 py-3 text-lg text-white rounded-lg"
+                            className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition"
                             onClick={handleClose}
                         >
                             Cancel
                         </button>
                         <button
-                            className="bg-green-600 px-4 py-3 text-lg text-white rounded-lg"
+                            className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
                             onClick={handleAddIssue}
                         >
                             {isEdited ? "Edit" : "Create"}
@@ -106,9 +105,8 @@ function NewIssue({issuesList, setIssuesList, labelsList, handleClose, data, isE
                     </div>
                 </form>
             </div>
-
         </div>
-    )
+    );
 }
 
 export default NewIssue;
