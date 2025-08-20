@@ -1,83 +1,100 @@
 import { useState } from "react";
 import * as React from "react";
+import type {IssueProps} from "../../types";
+import { issueSchema } from "../../validation.ts";
 
-interface Issue {
-    title: string;
-    description: string;
-    id: number;
-    labels: number[];
-}
 
-interface IssueProps {
-    issuesList: Issue[];
-    setIssuesList: React.Dispatch<React.SetStateAction<Issue[]>>;
-    labelsList: { id: number; name: string; color: string }[];
-    handleClose: () => void;
-    data?: Issue;
-    isEdited: boolean;
-}
-
-function NewIssue({ issuesList, setIssuesList, labelsList, handleClose, data, isEdited }: IssueProps) {
+function NewIssue({filteredResult, setFilteredResult, labelsList, handleClose, data, isEditing}: IssueProps) {
     const [title, setTitle] = useState<string>(data?.title || '');
     const [description, setDescription] = useState<string>(data?.description || '');
-    const [selectedLabels, setSelectedLabels] = useState<number[]>(data?.labels || []);
+    const [selectedLabels, setSelectedLabels] = useState<string[]>(data?.labels || []);
+
+
+    const [error, setError] = useState<Error | null>(null);
 
     const handleAddIssue = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         e.preventDefault();
+
+        const { error, value } = issueSchema.validate(
+            { title, description, labels: selectedLabels },
+            { abortEarly: false }
+        );
+
+        if (error) {
+            console.log("error", error.details)
+            // const messages = error.details.map((d) => d.message).join(", ");
+            // setError(new Error(messages));
+            return;
+        }
+
         if (!data) {
             if (title.trim() !== '' && description.trim() !== '') {
-                setIssuesList([...issuesList, {
-                    id: issuesList[issuesList.length - 1]?.id + 1,
-                    title,
-                    description,
-                    labels: selectedLabels
-                }]);
+                // TODO: instead of setting setFilteredResult add item in local storage
+                // TODO: trigger a function in parent component and in parent component re-fetch data from local storage
+                const response = localStorage.getItem("initialIssuesList");
+                const issueList = JSON.parse(response)
+
+
+                const issue = {
+                    id: filteredResult[filteredResult.length - 1]?.id + 1,
+                    title: value.title,
+                    description: value.description,
+                    labels: value.labels
+                }
+
+                issueList.push(issue);
+                localStorage.setItem("initialIssuesList", JSON.stringify(issueList));
+                setFilteredResult(issueList);
                 setTitle("");
                 setDescription("");
                 handleClose();
             }
         } else {
-            setIssuesList(
-                issuesList.map(issue =>
+            setFilteredResult(
+                filteredResult.map(issue =>
                     issue.id === data.id
-                        ? { ...issue, title, description, labels: selectedLabels }
+                        ? {...issue, title: value.title, description: value.description, labels: value.labels}
                         : issue
                 )
             );
             handleClose();
         }
+
+        console.log(filteredResult);
+        setError(null);
     }
 
     const handleSelectedLabels = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const labelsArray = Array.from(e.target.selectedOptions, option => +option.value);
+        const labelsArray = Array.from(e.target.selectedOptions, option => option.value);
         setSelectedLabels(labelsArray);
-    }
+    };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-gray-800/25 flex items-center justify-center z-50">
             <div className="bg-white w-full max-w-lg p-6 rounded-xl shadow-lg relative flex flex-col gap-4">
-                <h2 className="text-2xl font-bold">{isEdited ? "Edit Issue" : "New Issue"}</h2>
+                <h2 className="text-2xl font-bold">{isEditing ? "Edit Issue" : "New Issue"}</h2>
                 <form className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-1">
-                        <label className="text-lg font-semibold">Title:</label>
+                    <label className="flex flex-col gap-1 text-lg font-semibold">
+                        Title:
                         <input
                             placeholder="Enter issue title"
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                         />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-lg font-semibold">Description:</label>
+                        {error && <p className="text-red-600">{error.message}</p>}
+                    </label>
+                    <label className="flex flex-col gap-1 text-lg font-semibold">
+                        Description:
                         <textarea
                             placeholder="Enter issue description"
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                        <label className="text-lg font-semibold">Labels:</label>
+                    </label>
+                    <label className="flex flex-col gap-1 text-lg font-semibold">
+                        Labels:
                         <select
                             multiple
                             value={selectedLabels}
@@ -88,7 +105,8 @@ function NewIssue({ issuesList, setIssuesList, labelsList, handleClose, data, is
                                 <option key={label.id} value={label.id}>{label.name}</option>
                             ))}
                         </select>
-                    </div>
+                        {error && <p className="text-red-600">{error.message}</p>}
+                    </label>
                     <div className="flex justify-end gap-3 mt-4">
                         <button
                             className="px-4 py-2 rounded-lg bg-gray-400 text-white hover:bg-gray-500 transition"
@@ -100,7 +118,7 @@ function NewIssue({ issuesList, setIssuesList, labelsList, handleClose, data, is
                             className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
                             onClick={handleAddIssue}
                         >
-                            {isEdited ? "Edit" : "Create"}
+                            {isEditing ? "Edit" : "Create"}
                         </button>
                     </div>
                 </form>
